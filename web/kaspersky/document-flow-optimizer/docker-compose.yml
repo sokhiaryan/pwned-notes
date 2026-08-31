@@ -1,0 +1,12 @@
+services:
+  html2pdf-web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      HTML2PDF_TIMEOUT: "30"
+      HTML2PDF_MEM_LIMIT_MB: "100"
+      HTML2PDF_MAX_PDF_SIZE: "52428800"
+    pids_limit: 256
+    mem_limit: 128m
+    restart: unless-stopped
