@@ -1,0 +1,964 @@
+```html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KumoSec — Device Security Console</title>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bg: #050505;
+      --surface: #0a0a0a;
+      --panel: #111111;
+      --panel-alt: #151515;
+      --border: #252525;
+      --border-soft: #1b1b1b;
+
+      --text: #ffffff;
+      --text-secondary: #a0a0a0;
+      --text-muted: #666666;
+
+      --red: #e10600;
+      --red-bright: #ff1a1a;
+      --red-soft: rgba(225, 6, 0, 0.12);
+
+      --green: #d6d6d6;
+
+      --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      --sans: "IBM Plex Sans", Inter, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--bg);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(
+          180deg,
+          #080808 0%,
+          #050505 55%,
+          #050505 100%
+        );
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.035;
+      background-image:
+        linear-gradient(rgba(255,255,255,.5) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.5) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    /* --------------------------------------------------
+       SHELL
+    -------------------------------------------------- */
+
+    .shell {
+      width: min(1380px, calc(100% - 48px));
+      margin: 0 auto;
+      padding: 26px 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* --------------------------------------------------
+       TOP NAV
+    -------------------------------------------------- */
+
+    .top {
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 18px;
+      margin-bottom: 34px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+    }
+
+    .mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #3a3a3a;
+      background: #0c0c0c;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: -1px;
+      position: relative;
+    }
+
+    .mark::before {
+      content: "";
+      position: absolute;
+      left: -1px;
+      top: -1px;
+      width: 4px;
+      height: 10px;
+      background: var(--red);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1;
+      font-weight: 600;
+      letter-spacing: .01em;
+    }
+
+    .brand p {
+      margin: 6px 0 0;
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .topright {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      color: var(--text-secondary);
+      font-family: var(--mono);
+      font-size: 10px;
+    }
+
+    .clock {
+      color: #777;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #333;
+      background: #0b0b0b;
+      color: #d0d0d0;
+      padding: 7px 10px;
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      background: var(--red);
+      display: block;
+    }
+
+    /* --------------------------------------------------
+       PAGE HEADER
+    -------------------------------------------------- */
+
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 30px;
+      margin-bottom: 22px;
+    }
+
+    .eyebrow {
+      margin: 0 0 9px;
+      color: var(--red);
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .hero h2 {
+      margin: 0 0 7px;
+      font-size: 28px;
+      line-height: 1.1;
+      font-weight: 600;
+      letter-spacing: -.025em;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .device-meta {
+      min-width: 300px;
+      padding-left: 20px;
+      border-left: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 10px;
+      line-height: 2;
+      text-transform: uppercase;
+    }
+
+    .device-meta b {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    /* --------------------------------------------------
+       KPI GRID
+    -------------------------------------------------- */
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 20px;
+    }
+
+    .grid > .card {
+      border: 0;
+      min-height: 150px;
+    }
+
+    .label {
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .value {
+      margin-top: 13px;
+      font-family: var(--mono);
+      font-size: 27px;
+      font-weight: 500;
+      letter-spacing: -.04em;
+    }
+
+    .unit {
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+
+    .mini {
+      margin-top: 12px;
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 9px;
+    }
+
+    .bar {
+      height: 3px;
+      margin-top: 15px;
+      background: #252525;
+      overflow: hidden;
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      width: 91%;
+      background: var(--red);
+    }
+
+    /* --------------------------------------------------
+       MAIN LAYOUT
+    -------------------------------------------------- */
+
+    .main {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 18px;
+    }
+
+    .section-title h3 {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .section-title span {
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 9px;
+      text-transform: uppercase;
+    }
+
+    /* --------------------------------------------------
+       TELEMETRY
+    -------------------------------------------------- */
+
+    .telemetry {
+      height: 240px;
+      display: flex;
+      align-items: flex-end;
+      padding: 15px 4px 0;
+      border-top: 1px solid var(--border-soft);
+    }
+
+    .bars {
+      height: 190px;
+      width: 100%;
+      display: flex;
+      align-items: flex-end;
+      gap: 7px;
+    }
+
+    .barcol {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .barcol i {
+      display: block;
+      width: 100%;
+      max-width: 28px;
+      min-height: 18px;
+      background: #292929;
+      border-top: 2px solid #666;
+      opacity: .9;
+      transition: background .18s ease, border-color .18s ease;
+    }
+
+    .barcol:hover i {
+      background: var(--red);
+      border-color: var(--red-bright);
+    }
+
+    .barcol small {
+      color: #555;
+      font-family: var(--mono);
+      font-size: 8px;
+      white-space: nowrap;
+    }
+
+    /* --------------------------------------------------
+       DATA ROWS
+    -------------------------------------------------- */
+
+    .rows {
+      display: grid;
+    }
+
+    .row {
+      min-height: 43px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-soft);
+      font-family: var(--mono);
+      font-size: 10px;
+    }
+
+    .row:last-child {
+      border-bottom: 0;
+    }
+
+    .row span:first-child {
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .row span:last-child {
+      color: #ddd;
+      text-align: right;
+    }
+
+    .ok {
+      color: #ddd !important;
+      position: relative;
+    }
+
+    .ok::before {
+      content: "";
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      margin-right: 6px;
+      background: var(--red);
+      vertical-align: 1px;
+    }
+
+    .amber {
+      color: var(--red) !important;
+    }
+
+    /* --------------------------------------------------
+       EVENTS
+    -------------------------------------------------- */
+
+    .events {
+      display: grid;
+      gap: 0;
+    }
+
+    .event {
+      min-height: 52px;
+      display: flex;
+      gap: 11px;
+      align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .event:last-child {
+      border-bottom: 0;
+    }
+
+    .event-dot {
+      width: 5px;
+      height: 5px;
+      flex: none;
+      margin-top: 5px;
+      background: var(--red);
+    }
+
+    .event b {
+      display: block;
+      color: #ddd;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .event small {
+      display: block;
+      margin-top: 5px;
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 8px;
+    }
+
+    /* --------------------------------------------------
+       FOOTER
+    -------------------------------------------------- */
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-top: 20px;
+      padding: 15px 2px 0;
+      border-top: 1px solid var(--border);
+      color: #4f4f4f;
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: .03em;
+    }
+
+    .tag {
+      padding: 5px 8px;
+      border: 1px solid #252525;
+      color: #777;
+      font-family: var(--mono);
+      font-size: 8px;
+    }
+
+    /* --------------------------------------------------
+       RESPONSIVE
+    -------------------------------------------------- */
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .main {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        align-items: flex-start;
+      }
+
+      .device-meta {
+        min-width: 0;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .shell {
+        width: min(100% - 30px, 1380px);
+        padding-top: 16px;
+      }
+
+      .top {
+        align-items: flex-start;
+      }
+
+      .topright {
+        gap: 0;
+      }
+
+      .clock {
+        display: none;
+      }
+
+      .hero {
+        display: block;
+      }
+
+      .hero h2 {
+        font-size: 23px;
+      }
+
+      .device-meta {
+        margin-top: 18px;
+        padding: 12px 0 0;
+        border-left: 0;
+        border-top: 1px solid var(--border);
+      }
+
+      .grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .grid > .card {
+        min-height: 135px;
+        padding: 16px;
+      }
+
+      .value {
+        font-size: 21px;
+      }
+
+      .telemetry {
+        overflow-x: auto;
+      }
+
+      .bars {
+        min-width: 600px;
+      }
+
+      .footer {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pill {
+        padding: 6px 8px;
+      }
+
+      .hero h2 {
+        font-size: 21px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="shell">
+
+    <!-- TOP NAVIGATION -->
+
+    <header class="top">
+
+      <div class="brand">
+        <div class="mark">KS</div>
+
+        <div>
+          <h1>KumoSec</h1>
+          <p>Offensive Security · Internal Platform</p>
+        </div>
+      </div>
+
+      <div class="topright">
+        <span class="clock">UTC 2026-10-03 07:20:22 UTC</span>
+
+        <span class="pill">
+          <i class="dot"></i>
+          System Operational
+        </span>
+      </div>
+
+    </header>
+
+
+    <!-- PAGE HEADER -->
+
+    <section class="hero">
+
+      <div>
+        <p class="eyebrow">IoT Security Operations</p>
+
+        <h2>Environmental Node</h2>
+
+        <p>
+          Live telemetry and device health overview
+        </p>
+      </div>
+
+      <div class="device-meta">
+        NODE <b>Lun4R-ENV-042</b><br>
+        MODEL <b>ENV-SENSE Mk II</b><br>
+        FIRMWARE <b>1.4.7</b>
+      </div>
+
+    </section>
+
+
+    <!-- DEVICE METRICS -->
+
+    <section class="grid">
+
+      <div class="card">
+        <div class="label">Temperature</div>
+
+        <div class="value">
+          27.4
+          <span class="unit">°C</span>
+        </div>
+
+        <div class="mini">
+          Within configured operating range
+        </div>
+      </div>
+
+
+      <div class="card">
+        <div class="label">Humidity</div>
+
+        <div class="value">
+          68
+          <span class="unit">%RH</span>
+        </div>
+
+        <div class="mini">
+          Sensor channel · RH-01
+        </div>
+      </div>
+
+
+      <div class="card">
+        <div class="label">Signal Strength</div>
+
+        <div class="value">
+          -57
+          <span class="unit">dBm</span>
+        </div>
+
+        <div class="mini">
+          Wireless link · stable
+        </div>
+      </div>
+
+
+      <div class="card">
+        <div class="label">Battery</div>
+
+        <div class="value">
+          91
+          <span class="unit">%</span>
+        </div>
+
+        <div class="bar">
+          <span></span>
+        </div>
+
+        <div class="mini">
+          Estimated remaining capacity
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- MAIN OPERATIONS AREA -->
+
+    <section class="main">
+
+      <!-- TELEMETRY -->
+
+      <div class="card">
+
+        <div class="section-title">
+          <h3>Telemetry Activity</h3>
+          <span>Last 12 Reporting Intervals</span>
+        </div>
+
+        <div class="telemetry">
+
+          <div class="bars">
+
+            <div class="barcol">
+              <i style="height:45%"></i>
+              <small>10:00</small>
+            </div>
+
+            <div class="barcol">
+              <i style="height:60%"></i>
+              <small>10:05</small>
+            </div>
+
+            <div class="barcol">
+              <i style="height:52%"></i>
+              <small>10:10</small>
+            </div>
+
+            <div class="barcol">
+              <i style="height:72%"></i>
+              <small>10:15</small>
+            </div>
+
+            <div class="barcol">
+              <i style="height:64%"></i>
+              <small>10:20</small>
+            </div>
+
+            <div class="barcol">
+              <i style="height:81%"></i>
+              <small>10:25</small>
+            </div>
+
+            <div class="barcol">
+              <i style="height:67%"></i>
+              <small>10:30</small>
+            </div>
+
+            <div class="barcol">
+              <i style="height:75%"></i>
+              <small>10:35</small>
+            </div>
+
+            <div class="barcol">
+              <i style="height:59%"></i>
+              <small>10:40</small>
+            </div>
+
+            <div class="barcol">
+              <i style="height:86%"></i>
+              <small>10:45</small>
+            </div>
+
+            <div class="barcol">
+              <i style="height:70%"></i>
+              <small>10:50</small>
+            </div>
+
+            <div class="barcol">
+              <i style="height:78%"></i>
+              <small>Now</small>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- CONNECTIVITY -->
+
+      <div class="card">
+
+        <div class="section-title">
+          <h3>Connectivity</h3>
+          <span>Live</span>
+        </div>
+
+        <div class="rows">
+
+          <div class="row">
+            <span>Node Status</span>
+            <span class="ok">ONLINE</span>
+          </div>
+
+          <div class="row">
+            <span>MQTT Session</span>
+            <span class="ok">CONNECTED</span>
+          </div>
+
+          <div class="row">
+            <span>Telemetry Queue</span>
+            <span>3 pending</span>
+          </div>
+
+          <div class="row">
+            <span>Uptime</span>
+            <span>18d 07h 42m</span>
+          </div>
+
+          <div class="row">
+            <span>Location</span>
+            <span>Sector 04 / North Array</span>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- DEVICE HEALTH -->
+
+      <div class="card">
+
+        <div class="section-title">
+          <h3>Device Health</h3>
+          <span>Nominal</span>
+        </div>
+
+        <div class="rows">
+
+          <div class="row">
+            <span>Sensor Bus</span>
+            <span class="ok">OK</span>
+          </div>
+
+          <div class="row">
+            <span>Storage</span>
+            <span class="ok">OK</span>
+          </div>
+
+          <div class="row">
+            <span>Clock Sync</span>
+            <span class="ok">SYNCED</span>
+          </div>
+
+          <div class="row">
+            <span>Firmware</span>
+            <span>1.4.7</span>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- RECENT EVENTS -->
+
+      <div class="card">
+
+        <div class="section-title">
+          <h3>Recent Events</h3>
+          <span>Today</span>
+        </div>
+
+        <div class="events">
+
+          <div class="event">
+            <i class="event-dot"></i>
+
+            <div>
+              <b>Telemetry upload completed</b>
+              <small>Node ENV-042 · 10:51 UTC</small>
+            </div>
+          </div>
+
+
+          <div class="event">
+            <i class="event-dot"></i>
+
+            <div>
+              <b>Sensor heartbeat received</b>
+              <small>All channels responding · 10:50 UTC</small>
+            </div>
+          </div>
+
+
+          <div class="event">
+            <i class="event-dot"></i>
+
+            <div>
+              <b>Wireless link revalidated</b>
+              <small>RSSI -57 dBm · 10:48 UTC</small>
+            </div>
+          </div>
+
+
+          <div class="event">
+            <i class="event-dot"></i>
+
+            <div>
+              <b>Configuration check passed</b>
+              <small>Policy profile ENV-PROD-04 · 10:45 UTC</small>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- FOOTER -->
+
+    <footer class="footer">
+
+      <span>
+        © 2026 KumoSec · Internal Security Platform · Fleet Console v2.8.1
+      </span>
+
+      <span class="tag">
+        NODE: Lun4R-ENV-042
+      </span>
+
+    </footer>
+
+  </div>
+
+</body>
+</html>
+```

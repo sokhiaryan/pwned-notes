@@ -11,6 +11,9 @@ archive of my work solving security challenges.
 - `pwn/` — binary exploitation
 - `crypto/` — cryptography
 - `forensics/` — digital forensics
+- `blockchain/` — smart-contract / web3 security
+- `hardware/` — hardware & microarchitecture
+- `active-directory/` — Active Directory attack & DFIR
 - `osint/` — open-source intelligence
 - `mobile/` — mobile application security
 - `cloud/` — cloud security
@@ -18,6 +21,7 @@ archive of my work solving security challenges.
 
 ## Platforms represented
 
+- Lunar CTF (Lun4R) — see [Lunar CTF 2026 Finals](LUNAR-CTF-2026-FINALS.md)
 - Kaspersky CTF
 - picoCTF
 
